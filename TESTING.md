@@ -2,16 +2,23 @@
 
 Use this checklist before publishing a GitHub release.
 
-## 1. Run from the release folder
+## 1. Safe local test
+
+From the source/release folder:
 
 ```bash
-/usr/bin/python3 music_library_player.py
+chmod +x run-test.sh
+./run-test.sh
 ```
+
+`run-test.sh` uses a private `.test-home` and copies the current Music Library
+Player config/cache into it. The installed application's real configuration is
+not modified by the test build.
 
 Confirm:
 - the main window opens;
-- the Music Library Player icon is shown;
-- the version in the header matches the release;
+- the Music Library Player icon appears in the header before the program name;
+- the header shows the expected release version;
 - existing configured folders load;
 - cached tracks appear before/while an incremental rescan runs.
 

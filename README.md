@@ -3,7 +3,7 @@
 A standalone Linux music player and local-library manager for people who want to
 play and organise the music files they already own.
 
-**Current release: v0.7**
+**Current release: v0.8**
 
 ## Highlights
 
@@ -19,6 +19,8 @@ play and organise the music files they already own.
 - Built-in GitHub update checker.
 - Quiet update check after startup.
 - One-click download, SHA-256 verification, installation and restart.
+- Music Library Player icon displayed in the application header.
+- Safe local pre-release testing with `run-test.sh`.
 
 ## Linux requirements
 
@@ -84,6 +86,19 @@ When a newer release is available the player can:
 Update packages are published from:
 
 https://github.com/mikehellyer/music-library-player/releases
+
+## Local pre-release testing
+
+A development/test build can be run without replacing the installed version:
+
+```bash
+chmod +x run-test.sh
+./run-test.sh
+```
+
+The script creates a private `.test-home` directory, copies the current Music
+Library Player configuration into it, and runs the test build against that copy.
+This means normal testing cannot overwrite the installed application's settings.
 
 ## Source
 

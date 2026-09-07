@@ -40,7 +40,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
 APP_NAME = "Music Library Player"
-APP_VERSION = "0.7"
+APP_VERSION = "0.8"
 
 CONFIG_DIR = Path.home() / ".config" / "music-library-player"
 CONFIG_FILE = CONFIG_DIR / "library.json"
@@ -50,6 +50,7 @@ APP_ID = "music-library-player"
 INSTALL_DIR = Path.home() / ".local" / "share" / APP_ID
 INSTALLED_SCRIPT = INSTALL_DIR / "music_library_player.py"
 APP_ICON_FILE = Path(__file__).resolve().with_name("music-library-player.png")
+HEADER_ICON_FILE = Path(__file__).resolve().with_name("music-library-player-48.png")
 GITHUB_REPO = "mikehellyer/music-library-player"
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 UPDATE_USER_AGENT = f"Music-Library-Player/{APP_VERSION}"
@@ -2237,6 +2238,19 @@ class MusicLibraryPlayer(tk.Tk):
         # Header
         header = ttk.Frame(outer)
         header.pack(fill="x", pady=(0, 10))
+
+        # Show the same Music Library Player icon inside the application
+        # header as we use for the launcher/window/panel.
+        self.header_icon = None
+        try:
+            if HEADER_ICON_FILE.exists():
+                self.header_icon = tk.PhotoImage(file=str(HEADER_ICON_FILE))
+                ttk.Label(header, image=self.header_icon).pack(
+                    side="left",
+                    padx=(0, 9),
+                )
+        except Exception:
+            self.header_icon = None
 
         ttk.Label(
             header,
