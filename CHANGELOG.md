@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9
+
+- Startup update checks are now passive: a newer release is announced in the bottom-left without opening a popup.
+- The user clicks **Check for Updates** before the update choice is shown.
+- The **Now Playing** area is more compact, with smaller artwork and reduced vertical spacing.
+- Added `run-test.sh --simulate-update` for safely testing update-notice behaviour against the real GitHub release.
+
 ## v0.8
 
 Small visual release and first release prepared using the repeatable local-test

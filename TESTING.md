@@ -1,80 +1,57 @@
 # Music Library Player - Pre-release Testing
 
-Use this checklist before publishing a GitHub release.
-
-## 1. Safe local test
-
-From the source/release folder:
+## 1. Safe local v0.9 test
 
 ```bash
 chmod +x run-test.sh
 ./run-test.sh
 ```
 
-`run-test.sh` uses a private `.test-home` and copies the current Music Library
-Player config/cache into it. The installed application's real configuration is
-not modified by the test build.
+The script uses a private `.test-home` and copies the current Music Library
+Player config/cache into it. The installed application and the real
+`~/.config/music-library-player` are not modified.
 
 Confirm:
-- the main window opens;
-- the Music Library Player icon appears in the header before the program name;
-- the header shows the expected release version;
-- existing configured folders load;
-- cached tracks appear before/while an incremental rescan runs.
+- the header shows **v0.9**;
+- the existing application icon remains before the program name;
+- the **Now Playing** panel is noticeably more compact;
+- artwork still displays correctly;
+- title, album, progress/seek and all playback buttons remain usable;
+- existing configured folders and cached tracks load normally.
 
-## 2. Playback
+## 2. Passive startup update notification
 
-Confirm:
-- a track starts;
-- pause/resume works;
-- seek works;
-- previous/next work;
-- stop works;
-- queue progression works.
-
-## 3. Library
-
-Confirm:
-- Artists & Albums browse correctly;
-- All Tracks/Search works;
-- album artwork loads where available;
-- **Check for Changes** works;
-- **Full Rescan** works.
-
-## 4. User data
-
-Confirm:
-- favourites survive a restart;
-- playlists survive a restart;
-- recently played/play counts survive a restart;
-- `~/.config/music-library-player/library_cache.json` survives an install/update.
-
-## 5. Installer
-
-From the release folder:
+When the local test build is already the same or newer than the public GitHub release,
+use the simulation mode:
 
 ```bash
-chmod +x install.sh
-./install.sh
+./run-test.sh --simulate-update
 ```
 
-Then launch **Music Library Player** from the Applications menu.
+This creates a temporary copy of the v0.9 source which identifies itself as
+v0.7 only for this test. It talks to the real GitHub repository, so the current
+public release appears newer.
 
 Confirm:
-- the launcher works;
-- the correct icon appears;
-- the player uses `/usr/bin/python3`;
-- existing user settings are unchanged.
+- startup does **not** display an update popup;
+- the bottom-left displays `Update vX.X available — click Check for Updates`;
+- normal library/player status can change without removing that update notice;
+- clicking **Check for Updates** then displays the normal update choice.
 
-## 6. Update checker
+You can choose **No** at the update prompt. If you choose **Yes**, the update is
+installed only inside `.test-home`, not over the normal installed application.
 
-Before publishing a future release:
-- install the previous public version;
-- create the new GitHub Release and attach its ZIP and `SHA256SUMS.txt`;
-- launch the old version;
-- click **Check for Updates**;
-- accept the update;
-- confirm the checksum passes;
-- confirm installation completes;
-- confirm the app restarts on the new version;
-- confirm user settings/library cache are still present.
+## 3. Playback and library regression
+
+Confirm:
+- play/pause/resume/seek/previous/next/stop work;
+- queue progression works;
+- Artists & Albums browse correctly;
+- All Tracks/Search works;
+- Check for Changes and Full Rescan work;
+- favourites/playlists/history/play counts remain available in the sandbox.
+
+## 4. Before publishing
+
+After local approval, build the release package, test `install.sh --update` in an
+isolated HOME, verify SHA-256, and only then publish the next GitHub release.

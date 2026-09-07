@@ -40,7 +40,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
 APP_NAME = "Music Library Player"
-APP_VERSION = "0.8"
+APP_VERSION = "0.9"
 
 CONFIG_DIR = Path.home() / ".config" / "music-library-player"
 CONFIG_FILE = CONFIG_DIR / "library.json"
@@ -359,6 +359,10 @@ class MusicLibraryPlayer(tk.Tk):
 
         # Vars
         self.status = tk.StringVar(value="Ready")
+        # A persistent, passive startup-update notice.  This is deliberately
+        # separate from the general status text so library scans/playback do not
+        # overwrite the fact that a newer release is available.
+        self.update_notice = tk.StringVar(value="")
         self.now_playing = tk.StringVar(value="Nothing playing")
         self.search = tk.StringVar()
         self.folder_text = tk.StringVar(value="No music folders added yet.")
@@ -401,8 +405,9 @@ class MusicLibraryPlayer(tk.Tk):
             # incremental and only re-reads metadata for changed/new files.
             self.after(700, self.scan_library)
 
-        # Quietly check GitHub after startup. If a newer release exists the user
-        # is offered the update; network failures remain silent.
+        # Quietly check GitHub after startup.  If a newer release exists, only
+        # show a passive bottom-left notice.  The user explicitly clicks Check
+        # for Updates before any update dialogue is shown.
         self.after(2200, lambda: self.check_for_updates(silent=True))
 
     # ----------------------------------------------------------
@@ -1794,7 +1799,7 @@ class MusicLibraryPlayer(tk.Tk):
                     return
                 image = Image.open(io.BytesIO(image_bytes))
 
-            image.thumbnail((145, 145))
+            image.thumbnail((100, 100))
             photo = ImageTk.PhotoImage(image.copy())
             self.now_art_photo = photo
             self.now_art_label.configure(image=photo, text="")
@@ -2228,6 +2233,7 @@ class MusicLibraryPlayer(tk.Tk):
         try:
             style.configure("Title.TLabel", font=("", 18, "bold"))
             style.configure("Now.TLabel", font=("", 12, "bold"))
+            style.configure("UpdateNotice.TLabel", font=("", 9, "bold"))
             style.configure("Album.TLabel", font=("", 15, "bold"))
         except Exception:
             pass
@@ -2269,11 +2275,11 @@ class MusicLibraryPlayer(tk.Tk):
         ).pack(side="right")
 
         # Now Playing
-        player = ttk.LabelFrame(outer, text="Now Playing", padding=10)
+        player = ttk.LabelFrame(outer, text="Now Playing", padding=7)
         player.pack(fill="x", pady=(0, 10))
 
-        now_art_box = ttk.Frame(player, width=155, height=155)
-        now_art_box.pack(side="left", padx=(0, 12))
+        now_art_box = ttk.Frame(player, width=108, height=108)
+        now_art_box.pack(side="left", padx=(0, 10))
         now_art_box.pack_propagate(False)
 
         self.now_art_label = ttk.Label(
@@ -2297,7 +2303,7 @@ class MusicLibraryPlayer(tk.Tk):
             player_info,
             textvariable=self.now_album_text,
             foreground="#666666",
-        ).pack(anchor="w", pady=(3, 8))
+        ).pack(anchor="w", pady=(2, 5))
 
         progress_line = ttk.Frame(player_info)
         progress_line.pack(fill="x")
@@ -2326,7 +2332,7 @@ class MusicLibraryPlayer(tk.Tk):
         ).pack(side="left")
 
         controls = ttk.Frame(player_info)
-        controls.pack(fill="x", pady=(8, 0))
+        controls.pack(fill="x", pady=(5, 0))
 
         ttk.Button(
             controls,
@@ -2447,10 +2453,19 @@ class MusicLibraryPlayer(tk.Tk):
         statusbar = ttk.Frame(outer)
         statusbar.pack(fill="x", pady=(8, 0))
 
+        # Startup update checks are passive: when a newer release exists this
+        # notice remains at the bottom-left until the user chooses Check for
+        # Updates.  General player/library status appears beside it.
+        ttk.Label(
+            statusbar,
+            textvariable=self.update_notice,
+            style="UpdateNotice.TLabel",
+        ).pack(side="left")
+
         ttk.Label(
             statusbar,
             textvariable=self.status,
-        ).pack(side="left")
+        ).pack(side="left", padx=(10, 0))
 
         notes = []
         notes.append(
@@ -3028,7 +3043,7 @@ class MusicLibraryPlayer(tk.Tk):
         if hasattr(self, "update_btn"):
             self.update_btn.configure(state="normal")
         if silent:
-            self.status.set("Ready")
+            # A background check must never disturb normal scan/playback status.
             return
         self.status.set("Update check failed")
         messagebox.showerror(
@@ -3044,13 +3059,24 @@ class MusicLibraryPlayer(tk.Tk):
 
         latest = result["latest"]
         if version_tuple(latest) <= version_tuple(APP_VERSION):
+            self.update_notice.set("")
+            if silent:
+                return
             self.status.set(f"Music Library Player v{APP_VERSION} is up to date")
-            if not silent:
-                messagebox.showinfo(
-                    "No update available",
-                    f"You are running the latest version: v{APP_VERSION}.",
-                    parent=self,
-                )
+            messagebox.showinfo(
+                "No update available",
+                f"You are running the latest version: v{APP_VERSION}.",
+                parent=self,
+            )
+            return
+
+        # Background checks only announce the release in the bottom-left.
+        # The update choice is deliberately deferred until the user presses the
+        # Check for Updates button, matching Internet Radio Player behaviour.
+        self.update_notice.set(
+            f"Update v{latest} available — click Check for Updates"
+        )
+        if silent:
             return
 
         self.status.set(f"Music Library Player v{latest} is available")

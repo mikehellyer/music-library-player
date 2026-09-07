@@ -3,7 +3,7 @@
 A standalone Linux music player and local-library manager for people who want to
 play and organise the music files they already own.
 
-**Current release: v0.8**
+**Current local test build: v0.9**
 
 ## Highlights
 
@@ -17,7 +17,7 @@ play and organise the music files they already own.
 - Incremental library rescans with a persistent cache.
 - `mpv`-first playback with pause, resume, seek, previous and next controls.
 - Built-in GitHub update checker.
-- Quiet update check after startup.
+- Passive update check after startup: a newer release is announced in the bottom-left without interrupting you.
 - One-click download, SHA-256 verification, installation and restart.
 - Music Library Player icon displayed in the application header.
 - Safe local pre-release testing with `run-test.sh`.
