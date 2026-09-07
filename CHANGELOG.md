@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.11
+
+- Renamed the user-facing application to **Simple Music Library Player**.
+- Kept the internal app ID, config path, install path and GitHub repository unchanged for seamless upgrades.
+- Applications-menu launcher now displays the new name while retaining `music-library-player.desktop`.
+- Existing desktop shortcuts are migrated to the new visible name without creating a shortcut for users who did not already have one.
+- Updater explicitly accepts both old and new installer asset naming conventions.
+- Retains passive startup update notifications, compact Now Playing panel and maximized startup.
+
 ## v0.10
 
 - Startup update checks are fully passive: no popup and no visual/state change to the **Check for Updates** button.

@@ -1,127 +1,86 @@
-# Music Library Player
+# Simple Music Library Player
 
-A standalone Linux music player and local-library manager for people who want to
-play and organise the music files they already own.
+A straightforward Linux desktop player for browsing and playing a local digital
+music collection.
 
-**Current release: v0.10**
+**Simple Music Library Player** is the new user-facing name introduced in v0.11.
+For update compatibility, its technical identity deliberately remains
+`music-library-player`.
 
-## Highlights
+## Features
 
-- Add one or more existing music folders.
-- Scan folders recursively without moving or changing your music files.
-- Browse Artist → Album → Track.
-- Display local or embedded album artwork.
-- Search the full library.
-- Build and edit a Now Playing queue.
-- Favourites, playlists, recently played tracks and play counts.
-- Incremental library rescans with a persistent cache.
-- `mpv`-first playback with pause, resume, seek, previous and next controls.
-- Built-in GitHub update checker.
-- Passive update check after startup: a newer release is announced in the bottom-left without interrupting you.
-- One-click download, SHA-256 verification, installation and restart.
-- Music Library Player icon displayed in the application header.
-- Starts maximized by default so the complete player/library interface is visible.
-- Safe local pre-release testing with `run-test.sh`.
+- Artist → Album → Track browsing
+- Full-library search
+- Album artwork
+- Now Playing queue
+- Favourites and playlists
+- Recently played tracks and play counts
+- Persistent library cache and incremental rescanning
+- mpv-first playback, with VLC/ffplay fallback
+- Existing vinyl/blue-note application icon
+- Passive GitHub update notification with user-initiated installation
+- Starts maximized so the full library interface is visible
 
-## Linux requirements
+## Linux installation
 
-Music Library Player is developed and tested primarily for Pop!_OS / Ubuntu.
+Developed and tested primarily on Pop!_OS / Ubuntu.
 
 Recommended packages:
 
 ```bash
-sudo apt update
 sudo apt install python3-tk python3-mutagen python3-pil python3-pil.imagetk mpv
 ```
 
-The player can also detect VLC/cvlc or ffplay as alternative playback engines.
-
-## Install
-
-Download the current release ZIP from GitHub Releases, extract it, then run:
+Then run:
 
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
 
-The application is installed for the current user at:
+The application is installed under:
 
 ```text
 ~/.local/share/music-library-player
 ```
 
-The Applications-menu launcher is installed at:
+The Applications-menu launcher remains:
 
 ```text
 ~/.local/share/applications/music-library-player.desktop
 ```
 
-## Your library data is kept separate
+but is displayed as **Simple Music Library Player**.
 
-Personal data is stored under:
+## Existing settings are preserved
+
+The rename does **not** move or reset your user data. It continues to use:
 
 ```text
 ~/.config/music-library-player/
 ```
 
-This includes the configured music folders, favourites, playlists, play history,
-play counts and the library cache. Program updates do **not** overwrite this
-directory.
-
-Your music files themselves are never copied into the application directory.
+That preserves library folders, playlists, favourites, recently played history,
+play counts and the library cache across the rename and future updates.
 
 ## Updates
 
-Music Library Player checks the project's GitHub Releases page shortly after
-startup. You can also choose **Check for Updates** in the main window.
-
-When a newer release is available the player can:
-
-1. Download the installer ZIP.
-2. Download `SHA256SUMS.txt`.
-3. Verify the ZIP using SHA-256.
-4. Run the bundled user-local installer.
-5. Restart Music Library Player.
-
-Update packages are published from:
-
-https://github.com/mikehellyer/music-library-player/releases
-
-## Local pre-release testing
-
-A development/test build can be run without replacing the installed version:
-
-```bash
-chmod +x run-test.sh
-./run-test.sh
-```
-
-The script creates a private `.test-home` directory, copies the current Music
-Library Player configuration into it, and runs the test build against that copy.
-This means normal testing cannot overwrite the installed application's settings.
-
-## Source
-
-Main source file:
-
-```text
-music_library_player.py
-```
-
-GitHub repository:
+The updater continues to use the existing GitHub repository:
 
 https://github.com/mikehellyer/music-library-player
 
+The updater accepts both the original installer naming convention
+(`Music_Library_Player_..._Installer.zip`) and the new branding
+(`Simple_Music_Library_Player_..._Installer.zip`).
+
+A background check is passive: if a newer release exists, a notice appears at
+the bottom-left. The update/install prompt is shown only after the user presses
+**Check for Updates**.
+
 ## Project authorship
 
-Music Library Player was designed, specified and tested by **Mike Hellyer**.
-
-The application code was developed with the assistance of **OpenAI's ChatGPT**,
+Simple Music Library Player was **designed, specified and tested by Mike Hellyer**.
+The application code was **developed with the assistance of OpenAI's ChatGPT**,
 based on Mike's feature ideas, requirements, feedback and testing.
 
 **Designed by Mike Hellyer · Developed with OpenAI ChatGPT**
-
-## Licence
-
-GNU General Public License v3.0. See `LICENSE`.

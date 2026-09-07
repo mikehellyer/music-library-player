@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Music Library Player v0.7
+Simple Music Library Player v0.11
 
 A standalone Linux digital music library/player.
 
@@ -39,8 +39,8 @@ from collections import defaultdict
 from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
-APP_NAME = "Music Library Player"
-APP_VERSION = "0.10"
+APP_NAME = "Simple Music Library Player"
+APP_VERSION = "0.11"
 
 CONFIG_DIR = Path.home() / ".config" / "music-library-player"
 CONFIG_FILE = CONFIG_DIR / "library.json"
@@ -310,7 +310,7 @@ class MusicLibraryPlayer(tk.Tk):
         self.geometry("1320x790")
         self.minsize(1050, 650)
 
-        # Use the existing Music Library Player icon when it is present beside
+        # Use the existing Simple Music Library Player icon when it is present beside
         # the installed program. Updates never replace the user's icon unless
         # an icon file is explicitly included in the release package.
         try:
@@ -2273,7 +2273,7 @@ class MusicLibraryPlayer(tk.Tk):
         header = ttk.Frame(outer)
         header.pack(fill="x", pady=(0, 10))
 
-        # Show the same Music Library Player icon inside the application
+        # Show the same Simple Music Library Player icon inside the application
         # header as we use for the launcher/window/panel.
         self.header_icon = None
         try:
@@ -3040,12 +3040,19 @@ class MusicLibraryPlayer(tk.Tk):
                     if asset.get("name") and asset.get("browser_download_url")
                 }
 
+                # Accept both the original release-asset branding and the
+                # new Simple Music Library Player branding.  The GitHub repo,
+                # app ID and config paths intentionally remain unchanged.
+                installer_markers = (
+                    "simple_music_library_player",
+                    "music_library_player",
+                )
                 package_name = next(
                     (
                         name for name in assets
                         if name.lower().endswith(".zip")
-                        and "music_library_player" in name.lower()
                         and "installer" in name.lower()
+                        and any(marker in name.lower() for marker in installer_markers)
                     ),
                     None,
                 )
@@ -3081,7 +3088,7 @@ class MusicLibraryPlayer(tk.Tk):
         self.status.set("Update check failed")
         messagebox.showerror(
             "Update check failed",
-            "Music Library Player could not check GitHub for updates.\n\n"
+            "Simple Music Library Player could not check GitHub for updates.\n\n"
             f"{exc}",
             parent=self,
         )
@@ -3095,7 +3102,7 @@ class MusicLibraryPlayer(tk.Tk):
             self.update_notice.set("")
             if silent:
                 return
-            self.status.set(f"Music Library Player v{APP_VERSION} is up to date")
+            self.status.set(f"Simple Music Library Player v{APP_VERSION} is up to date")
             messagebox.showinfo(
                 "No update available",
                 f"You are running the latest version: v{APP_VERSION}.",
@@ -3112,12 +3119,12 @@ class MusicLibraryPlayer(tk.Tk):
         if silent:
             return
 
-        self.status.set(f"Music Library Player v{latest} is available")
+        self.status.set(f"Simple Music Library Player v{latest} is available")
 
         if not result["package_url"] or not result["checksum_url"]:
             messagebox.showinfo(
                 "Update available",
-                f"Music Library Player v{latest} is available on GitHub.\n\n"
+                f"Simple Music Library Player v{latest} is available on GitHub.\n\n"
                 "This release does not contain the automatic-update package, so "
                 "please download it from the Releases page.",
                 parent=self,
@@ -3128,7 +3135,7 @@ class MusicLibraryPlayer(tk.Tk):
         if len(notes) > 900:
             notes = notes[:900].rstrip() + "…"
         message = (
-            f"Music Library Player v{latest} is available.\n\n"
+            f"Simple Music Library Player v{latest} is available.\n\n"
             f"You are currently running v{APP_VERSION}.\n\n"
         )
         if notes:
@@ -3145,7 +3152,7 @@ class MusicLibraryPlayer(tk.Tk):
     def _install_update(self, result):
         if hasattr(self, "update_btn"):
             self.update_btn.configure(state="disabled")
-        self.status.set(f"Downloading Music Library Player v{result['latest']}…")
+        self.status.set(f"Downloading Simple Music Library Player v{result['latest']}…")
 
         def worker():
             workdir = Path(tempfile.mkdtemp(prefix="music-library-player-update-"))
@@ -3222,7 +3229,7 @@ class MusicLibraryPlayer(tk.Tk):
         self.status.set(f"Updated to v{latest}")
         messagebox.showinfo(
             "Update installed",
-            f"Music Library Player v{latest} has been installed successfully.\n\n"
+            f"Simple Music Library Player v{latest} has been installed successfully.\n\n"
             "The player will now restart.",
             parent=self,
         )
@@ -3245,7 +3252,7 @@ class MusicLibraryPlayer(tk.Tk):
         except Exception as exc:
             messagebox.showwarning(
                 "Restart required",
-                "The update was installed, but Music Library Player could not "
+                "The update was installed, but Simple Music Library Player could not "
                 "restart automatically.\n\n"
                 f"{exc}\n\nPlease start it again from the Applications menu.",
                 parent=self,
@@ -3307,7 +3314,7 @@ class MusicLibraryPlayer(tk.Tk):
     def python_environment_warning(self):
         messagebox.showwarning(
             "Python environment",
-            "Music Library Player is running with:\n\n"
+            "Simple Music Library Player is running with:\n\n"
             f"    {os.sys.executable}\n\n"
             "but Mutagen is not available in that Python environment.\n\n"
             "On Pop!_OS / Ubuntu, run the player with:\n\n"

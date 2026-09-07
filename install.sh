@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="Music Library Player"
+APP_NAME="Simple Music Library Player"
 APP_ID="music-library-player"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -66,7 +66,7 @@ cp "$SCRIPT_DIR/music_library_player.py" \
 chmod +x "$INSTALL_DIR/music_library_player.py"
 
 # Runtime/window icon files. If an update package ever omits an icon, the
-# previously installed Music Library Player icon is intentionally left alone.
+# previously installed music-library-player icon is intentionally left alone.
 for icon_file in \
     music-library-player.png \
     music-library-player-256.png \
@@ -104,7 +104,7 @@ cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Music Library Player
+Name=Simple Music Library Player
 Comment=Play and organise your local music collection
 Exec=/usr/bin/python3 "$INSTALL_DIR/music_library_player.py"
 Icon=$APP_ID
@@ -116,11 +116,22 @@ EOF
 
 chmod +x "$DESKTOP_FILE"
 
-# Only create/update the desktop shortcut during a normal interactive install.
-# Automatic updates should not unexpectedly add desktop files.
-if [ "$UPDATE_MODE" != "true" ] && [ -d "$DESKTOP_DIR" ]; then
-    cp "$DESKTOP_FILE" "$DESKTOP_DIR/Music Library Player.desktop"
-    chmod +x "$DESKTOP_DIR/Music Library Player.desktop"
+# Keep the desktop shortcut migration-safe.  The internal application ID and
+# launcher filename stay as music-library-player, but an existing old-brand
+# desktop shortcut is renamed to the new display name.  Automatic updates do
+# not create a desktop shortcut for users who did not already have one.
+OLD_DESKTOP_SHORTCUT="$DESKTOP_DIR/Music Library Player.desktop"
+NEW_DESKTOP_SHORTCUT="$DESKTOP_DIR/Simple Music Library Player.desktop"
+if [ -d "$DESKTOP_DIR" ]; then
+    if [ "$UPDATE_MODE" != "true" ]; then
+        rm -f "$OLD_DESKTOP_SHORTCUT"
+        cp "$DESKTOP_FILE" "$NEW_DESKTOP_SHORTCUT"
+        chmod +x "$NEW_DESKTOP_SHORTCUT"
+    elif [ -f "$OLD_DESKTOP_SHORTCUT" ] || [ -f "$NEW_DESKTOP_SHORTCUT" ]; then
+        rm -f "$OLD_DESKTOP_SHORTCUT"
+        cp "$DESKTOP_FILE" "$NEW_DESKTOP_SHORTCUT"
+        chmod +x "$NEW_DESKTOP_SHORTCUT"
+    fi
 fi
 
 if command -v update-desktop-database >/dev/null 2>&1; then
