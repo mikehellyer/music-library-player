@@ -1,6 +1,6 @@
 # Music Library Player - Pre-release Testing
 
-## 1. Safe local v0.9 test
+## 1. Safe local v0.10 test
 
 ```bash
 chmod +x run-test.sh
@@ -12,34 +12,32 @@ Player config/cache into it. The installed application and the real
 `~/.config/music-library-player` are not modified.
 
 Confirm:
-- the header shows **v0.9**;
+- the header shows **v0.10**;
+- the application starts maximized while retaining the normal title bar/window controls;
 - the existing application icon remains before the program name;
-- the **Now Playing** panel is noticeably more compact;
-- artwork still displays correctly;
-- title, album, progress/seek and all playback buttons remain usable;
+- the **Now Playing** panel is compact;
+- artwork, title, album, progress/seek and playback controls remain usable;
 - existing configured folders and cached tracks load normally.
 
 ## 2. Passive startup update notification
 
-When the local test build is already the same or newer than the public GitHub release,
-use the simulation mode:
+After v0.10 is published, this helper can safely simulate an older v0.9 client:
 
 ```bash
 ./run-test.sh --simulate-update
 ```
 
-This creates a temporary copy of the v0.9 source which identifies itself as
-v0.7 only for this test. It talks to the real GitHub repository, so the current
-public release appears newer.
+The temporary copy reports itself as v0.9 and talks to the real GitHub release.
 
 Confirm:
-- startup does **not** display an update popup;
-- the bottom-left displays `Update vX.X available — click Check for Updates`;
-- normal library/player status can change without removing that update notice;
+- startup displays **no update popup**;
+- **Check for Updates** is not disabled, depressed, or otherwise touched by the silent check;
+- the bottom-left displays `Update v0.10 available — click Check for Updates`;
+- normal player/library status changes do not remove that update notice;
 - clicking **Check for Updates** then displays the normal update choice.
 
-You can choose **No** at the update prompt. If you choose **Yes**, the update is
-installed only inside `.test-home`, not over the normal installed application.
+If **Yes** is chosen, the update is installed only inside `.test-home`, not over
+the normal installed application.
 
 ## 3. Playback and library regression
 
@@ -53,5 +51,5 @@ Confirm:
 
 ## 4. Before publishing
 
-After local approval, build the release package, test `install.sh --update` in an
-isolated HOME, verify SHA-256, and only then publish the next GitHub release.
+Build the release package, test `install.sh --update` in an isolated HOME,
+verify SHA-256, and only then publish the GitHub release.

@@ -40,7 +40,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
 APP_NAME = "Music Library Player"
-APP_VERSION = "0.9"
+APP_VERSION = "0.10"
 
 CONFIG_DIR = Path.home() / ".config" / "music-library-player"
 CONFIG_FILE = CONFIG_DIR / "library.json"
@@ -385,6 +385,10 @@ class MusicLibraryPlayer(tk.Tk):
         self.load_user_data()
         cached_tracks = self.load_library_cache()
         self.build_ui()
+        # Start maximized so the complete library/player interface is visible
+        # immediately.  This is a normal desktop maximize, not borderless
+        # fullscreen, so the title bar and window controls remain available.
+        self.after_idle(self.maximize_window)
         self.search.trace_add("write", lambda *_: self.apply_filter())
         self.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -409,6 +413,30 @@ class MusicLibraryPlayer(tk.Tk):
         # show a passive bottom-left notice.  The user explicitly clicks Check
         # for Updates before any update dialogue is shown.
         self.after(2200, lambda: self.check_for_updates(silent=True))
+
+    def maximize_window(self):
+        """Maximize the main window while keeping normal desktop chrome."""
+        # Tk on Linux/X11 exposes maximization through the -zoomed window
+        # attribute.  Other Tk platforms commonly support state("zoomed").
+        # Keep a final screen-sized fallback for unusual window managers.
+        try:
+            self.attributes("-zoomed", True)
+            return
+        except tk.TclError:
+            pass
+
+        try:
+            self.state("zoomed")
+            return
+        except tk.TclError:
+            pass
+
+        try:
+            width = self.winfo_screenwidth()
+            height = self.winfo_screenheight()
+            self.geometry(f"{width}x{height}+0+0")
+        except tk.TclError:
+            pass
 
     # ----------------------------------------------------------
     # Configuration
@@ -2988,9 +3016,14 @@ class MusicLibraryPlayer(tk.Tk):
     # GitHub updates
     # ----------------------------------------------------------
     def check_for_updates(self, silent=False):
-        if hasattr(self, "update_btn"):
-            self.update_btn.configure(state="disabled")
+        # The automatic startup check must be completely passive.  In
+        # particular it must not change the Check for Updates button state,
+        # because some ttk themes make a disabled button look as though it has
+        # been pressed by the application.  Only an explicit/manual check owns
+        # the button state and visible checking status.
         if not silent:
+            if hasattr(self, "update_btn"):
+                self.update_btn.configure(state="disabled")
             self.status.set("Checking GitHub for updates…")
 
         def worker():
@@ -3040,7 +3073,7 @@ class MusicLibraryPlayer(tk.Tk):
         threading.Thread(target=worker, daemon=True).start()
 
     def _handle_update_error(self, exc, silent):
-        if hasattr(self, "update_btn"):
+        if not silent and hasattr(self, "update_btn"):
             self.update_btn.configure(state="normal")
         if silent:
             # A background check must never disturb normal scan/playback status.
@@ -3054,7 +3087,7 @@ class MusicLibraryPlayer(tk.Tk):
         )
 
     def _handle_update_check(self, result, silent):
-        if hasattr(self, "update_btn"):
+        if not silent and hasattr(self, "update_btn"):
             self.update_btn.configure(state="normal")
 
         latest = result["latest"]
