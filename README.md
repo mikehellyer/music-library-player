@@ -1,11 +1,10 @@
 # Simple Music Library Player
 
-A straightforward Linux desktop player for browsing and playing a local digital
-music collection.
+A straightforward desktop player for browsing and playing a local digital music
+collection on **Linux and macOS**.
 
-**Simple Music Library Player** is the new user-facing name introduced in v0.11.
-For update compatibility, its technical identity deliberately remains
-`music-library-player`.
+The user-facing name is **Simple Music Library Player**. For update and data
+compatibility, its technical identity deliberately remains `music-library-player`.
 
 ## Features
 
@@ -16,10 +15,11 @@ For update compatibility, its technical identity deliberately remains
 - Favourites and playlists
 - Recently played tracks and play counts
 - Persistent library cache and incremental rescanning
-- mpv-first playback, with VLC/ffplay fallback
+- mpv-first playback, with VLC/ffplay fallback where available
 - Existing vinyl/blue-note application icon
 - Passive GitHub update notification with user-initiated installation
 - Starts maximized so the full library interface is visible
+- Built-in SHA-256 verified updates
 
 ## Linux installation
 
@@ -38,7 +38,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The application is installed under:
+Linux application files are installed under:
 
 ```text
 ~/.local/share/music-library-player
@@ -52,29 +52,71 @@ The Applications-menu launcher remains:
 
 but is displayed as **Simple Music Library Player**.
 
+## macOS installation
+
+v0.12 adds supported macOS installation with a genuine `.app` bundle.
+
+Extract the installer package and double-click:
+
+```text
+Install Simple Music Library Player.command
+```
+
+The app is installed to:
+
+```text
+~/Applications/Simple Music Library Player.app
+```
+
+Recommended Homebrew dependencies:
+
+```bash
+brew install python python-tk mpv
+```
+
+The installer creates a private Python support environment under:
+
+```text
+~/Library/Application Support/music-library-player/venv
+```
+
+It uses system site packages so Homebrew's split Tkinter module remains
+available inside that environment. Existing broken v0.12 test environments are
+repaired automatically.
+
+The app is currently unsigned/not notarized, so macOS may require Control-click
+→ **Open** on first launch.
+
+See `README-macOS.txt` for more detail.
+
 ## Existing settings are preserved
 
-The rename does **not** move or reset your user data. It continues to use:
+The Linux/macOS packaging and the visible-name change do **not** move or reset
+user data. It continues to use:
 
 ```text
 ~/.config/music-library-player/
 ```
 
 That preserves library folders, playlists, favourites, recently played history,
-play counts and the library cache across the rename and future updates.
+play counts and the library cache across updates.
 
 ## Updates
 
-The updater continues to use the existing GitHub repository:
+The updater uses:
 
 https://github.com/mikehellyer/music-library-player
 
 The updater accepts both the original installer naming convention
-(`Music_Library_Player_..._Installer.zip`) and the new branding
+(`Music_Library_Player_..._Installer.zip`) and the current branding
 (`Simple_Music_Library_Player_..._Installer.zip`).
 
+The release installer is universal: its `install.sh` detects Linux or macOS.
+On macOS the updater reinstalls `~/Applications/Simple Music Library Player.app`
+and reopens it; on Linux it updates the existing user-local installation.
+
 A background check is passive: if a newer release exists, a notice appears at
-the bottom-left. The update/install prompt is shown only after the user presses
+the bottom-left. The update/install prompt appears only after the user presses
 **Check for Updates**.
 
 ## Project authorship

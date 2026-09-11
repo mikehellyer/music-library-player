@@ -1,44 +1,44 @@
-# Simple Music Library Player - v0.11 Pre-release Testing
+# Simple Music Library Player - v0.12 Testing
 
-Use `run-test.sh` to test the new branding without replacing the installed
-release or changing the live configuration in `~/.config/music-library-player`.
+## Linux local test
+
+Use the normal isolated test runner:
 
 ```bash
 chmod +x run-test.sh
 ./run-test.sh
 ```
 
-The test build uses a private `.test-home` containing a copy of the current
-Music Library Player configuration/cache.
+It uses a private `.test-home` containing a copy of the current configuration,
+so the installed application and live `~/.config/music-library-player` are not
+modified.
 
-## Check the v0.11 rename
-
-- Window title says **Simple Music Library Player**.
-- Header says **Simple Music Library Player** and still uses the existing icon.
-- Version shows **v0.11**.
-- The window starts maximized.
-- Library, playlists, favourites, recent history and cache still load normally.
-- The internal config path remains `~/.config/music-library-player` inside the sandbox.
-
-## Update-notice simulation
-
-Because the published GitHub release is currently v0.10, run:
+After v0.12 is published, updater notification can be exercised with:
 
 ```bash
 ./run-test.sh --simulate-update
 ```
 
-The temporary copy reports itself as v0.9, allowing the real v0.10 release to
-exercise the passive startup notification. There should be no automatic popup
-and the **Check for Updates** button must not visibly change state until you
-press it yourself.
+The temporary copy identifies itself as v0.11 so the real v0.12 release appears
+newer. Expected behaviour: no automatic popup; bottom-left update notice only;
+manual **Check for Updates** click displays the update choice.
 
-## Technical identity intentionally unchanged
+## macOS install test
 
-These remain unchanged in v0.11:
+1. Extract `Simple_Music_Library_Player_v0.12_Installer.zip`.
+2. Double-click `Install Simple Music Library Player.command`.
+3. Confirm installation to `~/Applications/Simple Music Library Player.app`.
+4. Confirm the app launches from Finder.
+5. Confirm library browsing, artwork and playback work.
+6. Confirm existing data under `~/.config/music-library-player` remains present.
 
-- GitHub repository: `mikehellyer/music-library-player`
-- App ID: `music-library-player`
-- Install directory: `~/.local/share/music-library-player`
-- Config directory: `~/.config/music-library-player`
-- Launcher filename: `music-library-player.desktop`
+The v0.12 macOS installer has been tested on a real Mac. The revised installer
+fixes Tkinter visibility in Homebrew-based private virtual environments by using
+`--system-site-packages` and repairs the earlier test environment automatically.
+
+## Update test on macOS
+
+For a future v0.13 release, leave v0.12 installed, allow the passive notice to
+appear, then click **Check for Updates** manually. The updater should download
+the universal installer, verify SHA-256, reinstall the app under `~/Applications`
+and reopen it.

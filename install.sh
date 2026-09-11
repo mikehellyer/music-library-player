@@ -3,154 +3,240 @@ set -euo pipefail
 
 APP_NAME="Simple Music Library Player"
 APP_ID="music-library-player"
-
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="$HOME/.local/share/$APP_ID"
-APPLICATIONS_DIR="$HOME/.local/share/applications"
-ICON_BASE="$HOME/.local/share/icons/hicolor"
-DESKTOP_DIR="$HOME/Desktop"
-
 UPDATE_MODE="false"
 if [ "${1:-}" = "--update" ]; then
     UPDATE_MODE="true"
 fi
 
-echo
-echo "Installing $APP_NAME..."
-echo
+install_macos() {
+    local app_source="$SCRIPT_DIR/Simple Music Library Player.app"
+    local apps_dir="$HOME/Applications"
+    local app_dest="$apps_dir/Simple Music Library Player.app"
+    local support_dir="$HOME/Library/Application Support/$APP_ID"
+    local venv_dir="$support_dir/venv"
+    local base_python=""
 
-if [ ! -f "$SCRIPT_DIR/music_library_player.py" ]; then
-    echo "ERROR: music_library_player.py was not found beside install.sh"
-    exit 1
-fi
-
-if [ ! -x /usr/bin/python3 ]; then
-    echo "ERROR: /usr/bin/python3 was not found."
-    exit 1
-fi
-
-if ! /usr/bin/python3 -c "import tkinter" >/dev/null 2>&1; then
-    echo "WARNING: Python Tkinter is not installed."
-    echo "On Ubuntu/Pop!_OS:"
-    echo "  sudo apt install python3-tk"
     echo
-fi
-
-if ! /usr/bin/python3 -c "import mutagen" >/dev/null 2>&1; then
-    echo "WARNING: Python Mutagen is not installed."
-    echo "On Ubuntu/Pop!_OS:"
-    echo "  sudo apt install python3-mutagen"
+    echo "Installing $APP_NAME for macOS..."
     echo
-fi
 
-if ! /usr/bin/python3 -c "from PIL import Image" >/dev/null 2>&1; then
-    echo "WARNING: Python Pillow is not installed."
-    echo "On Ubuntu/Pop!_OS:"
-    echo "  sudo apt install python3-pil python3-pil.imagetk"
-    echo
-fi
-
-if ! command -v mpv >/dev/null 2>&1; then
-    echo "WARNING: mpv is not installed."
-    echo "mpv is the recommended playback engine."
-    echo "On Ubuntu/Pop!_OS:"
-    echo "  sudo apt install mpv"
-    echo
-fi
-
-mkdir -p "$INSTALL_DIR"
-mkdir -p "$APPLICATIONS_DIR"
-
-cp "$SCRIPT_DIR/music_library_player.py" \
-   "$INSTALL_DIR/music_library_player.py"
-chmod +x "$INSTALL_DIR/music_library_player.py"
-
-# Runtime/window icon files. If an update package ever omits an icon, the
-# previously installed music-library-player icon is intentionally left alone.
-for icon_file in \
-    music-library-player.png \
-    music-library-player-256.png \
-    music-library-player-128.png \
-    music-library-player-64.png \
-    music-library-player-48.png \
-    music-library-player-32.png \
-    music-library-player-16.png
-do
-    if [ -f "$SCRIPT_DIR/$icon_file" ]; then
-        cp "$SCRIPT_DIR/$icon_file" "$INSTALL_DIR/$icon_file"
+    if [ ! -d "$app_source" ]; then
+        echo "ERROR: Simple Music Library Player.app was not found beside install.sh"
+        exit 1
     fi
-done
 
-for size in 512 256 128 64 48 32 16; do
-    mkdir -p "$ICON_BASE/${size}x${size}/apps"
-done
+    # Finder-launched apps have a small PATH, so probe the standard Homebrew,
+    # python.org and system locations for a Python build that includes Tkinter.
+    # Search common Python locations. The .command installer runs in Terminal,
+    # so include the user's current python3 as well as Homebrew, python.org and
+    # MacPorts locations.
+    local path_python=""
+    path_python="$(command -v python3 2>/dev/null || true)"
+    for candidate in \
+        "$path_python" \
+        /opt/homebrew/bin/python3 \
+        /usr/local/bin/python3 \
+        /Library/Frameworks/Python.framework/Versions/Current/bin/python3 \
+        /opt/local/bin/python3 \
+        /usr/bin/python3
+    do
+        [ -n "$candidate" ] || continue
+        if [ -x "$candidate" ] && "$candidate" -c 'import tkinter' >/dev/null 2>&1; then
+            base_python="$candidate"
+            break
+        fi
+    done
 
-# The master icon is used for 512x512. Desktop environments scale it as needed.
-if [ -f "$SCRIPT_DIR/music-library-player.png" ]; then
-    cp "$SCRIPT_DIR/music-library-player.png" \
-       "$ICON_BASE/512x512/apps/$APP_ID.png"
-fi
-
-for size in 256 128 64 48 32 16; do
-    src="$SCRIPT_DIR/music-library-player-${size}.png"
-    dst="$ICON_BASE/${size}x${size}/apps/$APP_ID.png"
-    if [ -f "$src" ]; then
-        cp "$src" "$dst"
+    if [ -z "$base_python" ]; then
+        echo "ERROR: Python 3 with Tkinter was not found."
+        echo
+        echo "If you use Homebrew, install it with:"
+        echo "  brew install python python-tk"
+        echo
+        echo "Then run this installer again."
+        exit 1
     fi
-done
 
-DESKTOP_FILE="$APPLICATIONS_DIR/$APP_ID.desktop"
-cat > "$DESKTOP_FILE" <<EOF
+    mkdir -p "$support_dir" "$apps_dir"
+
+    # Use a private virtual environment for the Python packages needed by the
+    # player. Homebrew supplies Tkinter as a split Python package. Its Python
+    # startup code exposes split modules such as Tkinter to a virtual
+    # environment only when that environment includes system site packages.
+    # Recreate any older/broken environment automatically.
+    local rebuild_venv="false"
+    if [ ! -x "$venv_dir/bin/python3" ]; then
+        rebuild_venv="true"
+    elif ! grep -Eq '^include-system-site-packages = true$' "$venv_dir/pyvenv.cfg" 2>/dev/null; then
+        rebuild_venv="true"
+    elif ! "$venv_dir/bin/python3" -c 'import tkinter' >/dev/null 2>&1; then
+        rebuild_venv="true"
+    fi
+
+    if [ "$rebuild_venv" = "true" ]; then
+        echo "Repairing Python support environment..."
+        rm -rf "$venv_dir"
+        "$base_python" -m venv --system-site-packages "$venv_dir"
+    fi
+
+    echo "Preparing Python support (Mutagen + Pillow)..."
+    "$venv_dir/bin/python3" -m pip install \
+        --disable-pip-version-check --quiet --upgrade mutagen pillow
+
+    if ! "$venv_dir/bin/python3" -c 'import tkinter, mutagen; from PIL import Image, ImageTk' >/dev/null 2>&1; then
+        echo "ERROR: The private Python environment could not load Tkinter, Mutagen and Pillow."
+        exit 1
+    fi
+
+    rm -rf "$app_dest"
+    /usr/bin/ditto "$app_source" "$app_dest"
+    chmod +x "$app_dest/Contents/MacOS/SimpleMusicLibraryPlayer"
+
+    # mpv is preferred, but VLC is also supported if already installed.
+    export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    if ! command -v mpv >/dev/null 2>&1 && [ ! -x "/Applications/VLC.app/Contents/MacOS/VLC" ]; then
+        echo
+        echo "NOTE: No supported media player was found."
+        echo "For best results install mpv with Homebrew:"
+        echo "  brew install mpv"
+        echo
+    fi
+
+    echo
+    echo "$APP_NAME installed successfully."
+    echo
+    echo "Application:"
+    echo "  $app_dest"
+    echo
+    echo "Python support:"
+    echo "  $venv_dir"
+    echo
+    echo "Your library settings remain in:"
+    echo "  ~/.config/music-library-player"
+    echo
+
+    if [ "$UPDATE_MODE" != "true" ]; then
+        /usr/bin/open "$app_dest" || true
+    fi
+}
+
+install_linux() {
+    local install_dir="$HOME/.local/share/$APP_ID"
+    local applications_dir="$HOME/.local/share/applications"
+    local icon_base="$HOME/.local/share/icons/hicolor"
+    local desktop_dir="$HOME/Desktop"
+
+    echo
+    echo "Installing $APP_NAME for Linux..."
+    echo
+
+    if [ ! -f "$SCRIPT_DIR/music_library_player.py" ]; then
+        echo "ERROR: music_library_player.py was not found beside install.sh"
+        exit 1
+    fi
+    if [ ! -x /usr/bin/python3 ]; then
+        echo "ERROR: /usr/bin/python3 was not found."
+        exit 1
+    fi
+
+    if ! /usr/bin/python3 -c "import tkinter" >/dev/null 2>&1; then
+        echo "WARNING: Python Tkinter is not installed."
+        echo "On Ubuntu/Pop!_OS: sudo apt install python3-tk"
+    fi
+    if ! /usr/bin/python3 -c "import mutagen" >/dev/null 2>&1; then
+        echo "WARNING: Python Mutagen is not installed."
+        echo "On Ubuntu/Pop!_OS: sudo apt install python3-mutagen"
+    fi
+    if ! /usr/bin/python3 -c "from PIL import Image" >/dev/null 2>&1; then
+        echo "WARNING: Python Pillow is not installed."
+        echo "On Ubuntu/Pop!_OS: sudo apt install python3-pil python3-pil.imagetk"
+    fi
+    if ! command -v mpv >/dev/null 2>&1; then
+        echo "WARNING: mpv is not installed."
+        echo "On Ubuntu/Pop!_OS: sudo apt install mpv"
+    fi
+
+    mkdir -p "$install_dir" "$applications_dir"
+    cp "$SCRIPT_DIR/music_library_player.py" "$install_dir/music_library_player.py"
+    chmod +x "$install_dir/music_library_player.py"
+
+    for icon_file in \
+        music-library-player.png \
+        music-library-player-256.png \
+        music-library-player-128.png \
+        music-library-player-64.png \
+        music-library-player-48.png \
+        music-library-player-32.png \
+        music-library-player-16.png
+    do
+        if [ -f "$SCRIPT_DIR/$icon_file" ]; then
+            cp "$SCRIPT_DIR/$icon_file" "$install_dir/$icon_file"
+        fi
+    done
+
+    for size in 512 256 128 64 48 32 16; do
+        mkdir -p "$icon_base/${size}x${size}/apps"
+    done
+    if [ -f "$SCRIPT_DIR/music-library-player.png" ]; then
+        cp "$SCRIPT_DIR/music-library-player.png" "$icon_base/512x512/apps/$APP_ID.png"
+    fi
+    for size in 256 128 64 48 32 16; do
+        local src="$SCRIPT_DIR/music-library-player-${size}.png"
+        local dst="$icon_base/${size}x${size}/apps/$APP_ID.png"
+        if [ -f "$src" ]; then cp "$src" "$dst"; fi
+    done
+
+    local desktop_file="$applications_dir/$APP_ID.desktop"
+    cat > "$desktop_file" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Version=1.0
 Name=Simple Music Library Player
 Comment=Play and organise your local music collection
-Exec=/usr/bin/python3 "$INSTALL_DIR/music_library_player.py"
+Exec=/usr/bin/python3 "$install_dir/music_library_player.py"
 Icon=$APP_ID
 Terminal=false
 Categories=AudioVideo;Audio;Player;
 StartupNotify=true
 StartupWMClass=MusicLibraryPlayer
-EOF
+DESKTOP
+    chmod +x "$desktop_file"
 
-chmod +x "$DESKTOP_FILE"
-
-# Keep the desktop shortcut migration-safe.  The internal application ID and
-# launcher filename stay as music-library-player, but an existing old-brand
-# desktop shortcut is renamed to the new display name.  Automatic updates do
-# not create a desktop shortcut for users who did not already have one.
-OLD_DESKTOP_SHORTCUT="$DESKTOP_DIR/Music Library Player.desktop"
-NEW_DESKTOP_SHORTCUT="$DESKTOP_DIR/Simple Music Library Player.desktop"
-if [ -d "$DESKTOP_DIR" ]; then
-    if [ "$UPDATE_MODE" != "true" ]; then
-        rm -f "$OLD_DESKTOP_SHORTCUT"
-        cp "$DESKTOP_FILE" "$NEW_DESKTOP_SHORTCUT"
-        chmod +x "$NEW_DESKTOP_SHORTCUT"
-    elif [ -f "$OLD_DESKTOP_SHORTCUT" ] || [ -f "$NEW_DESKTOP_SHORTCUT" ]; then
-        rm -f "$OLD_DESKTOP_SHORTCUT"
-        cp "$DESKTOP_FILE" "$NEW_DESKTOP_SHORTCUT"
-        chmod +x "$NEW_DESKTOP_SHORTCUT"
+    local old_shortcut="$desktop_dir/Music Library Player.desktop"
+    local new_shortcut="$desktop_dir/Simple Music Library Player.desktop"
+    if [ -d "$desktop_dir" ]; then
+        if [ "$UPDATE_MODE" != "true" ]; then
+            rm -f "$old_shortcut"
+            cp "$desktop_file" "$new_shortcut"
+            chmod +x "$new_shortcut"
+        elif [ -f "$old_shortcut" ] || [ -f "$new_shortcut" ]; then
+            rm -f "$old_shortcut"
+            cp "$desktop_file" "$new_shortcut"
+            chmod +x "$new_shortcut"
+        fi
     fi
-fi
 
-if command -v update-desktop-database >/dev/null 2>&1; then
-    update-desktop-database "$APPLICATIONS_DIR" >/dev/null 2>&1 || true
-fi
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database "$applications_dir" >/dev/null 2>&1 || true
+    fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -f -t "$icon_base" >/dev/null 2>&1 || true
+    fi
 
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-    gtk-update-icon-cache -f -t "$ICON_BASE" >/dev/null 2>&1 || true
-fi
+    echo
+    echo "$APP_NAME installed successfully."
+    echo "Program: $install_dir"
+    echo "Applications launcher: $desktop_file"
+    echo "Settings preserved in: ~/.config/music-library-player"
+    echo
+}
 
-echo
-echo "$APP_NAME installed successfully."
-echo
-echo "Program:"
-echo "  $INSTALL_DIR"
-echo
-echo "Applications launcher:"
-echo "  $DESKTOP_FILE"
-echo
-echo "Your personal library settings are preserved in:"
-echo "  ~/.config/music-library-player"
-echo
+case "$(uname -s)" in
+    Darwin) install_macos ;;
+    Linux)  install_linux ;;
+    *)
+        echo "ERROR: Unsupported operating system: $(uname -s)"
+        exit 1
+        ;;
+esac

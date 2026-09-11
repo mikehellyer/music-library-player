@@ -39,22 +39,22 @@ if [ "${1:-}" = "--simulate-update" ]; then
 from pathlib import Path
 import sys
 src = Path(sys.argv[1]).read_text(encoding="utf-8")
-start = 'APP_VERSION = "0.11"'
+start = 'APP_VERSION = "0.12"'
 if start not in src:
-    raise SystemExit("Could not create simulated update build: expected v0.11 source.")
-src = src.replace(start, 'APP_VERSION = "0.10"', 1)
+    raise SystemExit("Could not create simulated update build: expected v0.12 source.")
+src = src.replace(start, 'APP_VERSION = "0.11"', 1)
 Path(sys.argv[2]).write_text(src, encoding="utf-8")
 PY
     TEST_SCRIPT="$SIMULATED_SCRIPT"
     trap 'rm -f "$SIMULATED_SCRIPT"' EXIT
     echo
     echo "Starting UPDATE-NOTICE SIMULATION..."
-    echo "The temporary test copy reports itself as v0.10 so the published GitHub v0.11 appears newer."
+    echo "The temporary test copy reports itself as v0.11 so the published GitHub v0.12 appears newer."
     echo "Expected startup behaviour: NO popup; bottom-left says an update is available."
     echo "Then click Check for Updates to confirm the normal update choice appears."
 else
     echo
-    echo "Starting Simple Music Library Player v0.11 LOCAL TEST build..."
+    echo "Starting Simple Music Library Player v0.12 LOCAL TEST build..."
 fi
 
 echo "Program: $TEST_SCRIPT"

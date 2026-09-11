@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Simple Music Library Player v0.11
+Simple Music Library Player v0.12
 
-A standalone Linux digital music library/player.
+A standalone Linux and macOS digital music library/player.
 
 Highlights:
 - Add one or more existing music folders
@@ -32,6 +32,7 @@ import subprocess
 import threading
 import tempfile
 import time
+import sys
 import tkinter as tk
 import urllib.request
 import zipfile
@@ -40,15 +41,17 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
 APP_NAME = "Simple Music Library Player"
-APP_VERSION = "0.11"
+APP_VERSION = "0.12"
 
 CONFIG_DIR = Path.home() / ".config" / "music-library-player"
 CONFIG_FILE = CONFIG_DIR / "library.json"
 USER_DATA_FILE = CONFIG_DIR / "user_data.json"
 LIBRARY_CACHE_FILE = CONFIG_DIR / "library_cache.json"
 APP_ID = "music-library-player"
+IS_MAC = sys.platform == "darwin"
 INSTALL_DIR = Path.home() / ".local" / "share" / APP_ID
 INSTALLED_SCRIPT = INSTALL_DIR / "music_library_player.py"
+MAC_APP_BUNDLE = Path.home() / "Applications" / "Simple Music Library Player.app"
 APP_ICON_FILE = Path(__file__).resolve().with_name("music-library-player.png")
 HEADER_ICON_FILE = Path(__file__).resolve().with_name("music-library-player-48.png")
 GITHUB_REPO = "mikehellyer/music-library-player"
@@ -401,7 +404,7 @@ class MusicLibraryPlayer(tk.Tk):
         if not self.player_kind:
             self.after(300, self.no_player_warning)
 
-        if not HAVE_MUTAGEN and os.sys.executable != "/usr/bin/python3":
+        if not HAVE_MUTAGEN or not HAVE_PIL:
             self.after(500, self.python_environment_warning)
 
         if self.folders:
@@ -714,6 +717,19 @@ class MusicLibraryPlayer(tk.Tk):
     # ----------------------------------------------------------
     @staticmethod
     def find_player():
+        # Finder-launched macOS .app bundles do not inherit the interactive
+        # shell PATH, so check the normal Homebrew and VLC app locations too.
+        if IS_MAC:
+            mac_candidates = (
+                ("mpv", "/opt/homebrew/bin/mpv"),
+                ("mpv", "/usr/local/bin/mpv"),
+                ("VLC", "/Applications/VLC.app/Contents/MacOS/VLC"),
+                ("VLC", str(Path.home() / "Applications" / "VLC.app" / "Contents" / "MacOS" / "VLC")),
+            )
+            for kind, candidate in mac_candidates:
+                if Path(candidate).is_file():
+                    return kind, candidate
+
         for kind, exe in (
             ("mpv", "mpv"),
             ("VLC", "cvlc"),
@@ -3189,12 +3205,15 @@ class MusicLibraryPlayer(tk.Tk):
                 if installer is None:
                     raise RuntimeError("install.sh was not found in the update package.")
 
+                installer_env = os.environ.copy()
+                installer_env["MUSIC_LIBRARY_PLAYER_UPDATE"] = "1"
                 completed = subprocess.run(
                     ["bash", str(installer), "--update"],
                     cwd=str(installer.parent),
                     text=True,
                     capture_output=True,
-                    timeout=90,
+                    timeout=180,
+                    env=installer_env,
                 )
                 if completed.returncode != 0:
                     details = (completed.stderr or completed.stdout or "").strip()
@@ -3245,10 +3264,16 @@ class MusicLibraryPlayer(tk.Tk):
         self.terminate_player()
 
         try:
-            subprocess.Popen(
-                ["/usr/bin/python3", str(INSTALLED_SCRIPT)],
-                start_new_session=True,
-            )
+            if IS_MAC:
+                subprocess.Popen(
+                    ["open", str(MAC_APP_BUNDLE)],
+                    start_new_session=True,
+                )
+            else:
+                subprocess.Popen(
+                    ["/usr/bin/python3", str(INSTALLED_SCRIPT)],
+                    start_new_session=True,
+                )
         except Exception as exc:
             messagebox.showwarning(
                 "Restart required",
@@ -3312,23 +3337,35 @@ class MusicLibraryPlayer(tk.Tk):
         )
 
     def python_environment_warning(self):
+        if IS_MAC:
+            guidance = (
+                "The macOS installer normally creates a private Python environment "
+                "for Mutagen and Pillow.\n\n"
+                "If this warning appears after installing, re-run "
+                "Install Simple Music Library Player.command."
+            )
+        else:
+            guidance = (
+                "On Pop!_OS / Ubuntu, install the metadata/image packages with:\n\n"
+                "    sudo apt install python3-mutagen python3-pil python3-pil.imagetk"
+            )
         messagebox.showwarning(
             "Python environment",
-            "Simple Music Library Player is running with:\n\n"
+            f"{APP_NAME} is running with:\n\n"
             f"    {os.sys.executable}\n\n"
-            "but Mutagen is not available in that Python environment.\n\n"
-            "On Pop!_OS / Ubuntu, run the player with:\n\n"
-            "    /usr/bin/python3 music_library_player.py\n\n"
-            "The supplied application launcher does this automatically.",
+            "but one or more optional library components are unavailable.\n\n"
+            f"{guidance}",
             parent=self,
         )
 
     def no_player_warning(self):
+        if IS_MAC:
+            install_hint = "Install mpv with Homebrew:\n\n    brew install mpv"
+        else:
+            install_hint = "Recommended on Pop!_OS / Ubuntu:\n\n    sudo apt install mpv"
         messagebox.showwarning(
             "No media player found",
-            f"{APP_NAME} needs a media player.\n\n"
-            "Recommended on Pop!_OS / Ubuntu:\n\n"
-            "    sudo apt install mpv",
+            f"{APP_NAME} needs a media player.\n\n{install_hint}",
             parent=self,
         )
 

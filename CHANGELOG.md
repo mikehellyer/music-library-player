@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.12
+
+- Added supported **macOS installation** alongside Linux.
+- Added a genuine **Simple Music Library Player.app** bundle with native `.icns` icon.
+- Added double-clickable `Install Simple Music Library Player.command` installer.
+- macOS installs the managed app to `~/Applications` so future self-updates do not require administrator privileges.
+- Added Homebrew Apple Silicon (`/opt/homebrew`), Intel (`/usr/local`) and MacPorts path support.
+- Added macOS playback detection for Homebrew `mpv` and `/Applications/VLC.app`.
+- Added a private Python support environment for Mutagen and Pillow.
+- Fixed Homebrew Tkinter visibility by creating the private environment with `--system-site-packages`.
+- Installer automatically repairs the earlier v0.12 test environment if it was created without Tkinter visibility.
+- Added macOS-aware updater restart which reopens the installed `.app` after a successful update.
+- Retains the existing `music-library-player` technical ID, GitHub repository and `~/.config/music-library-player` data path.
+- Linux installation and updater behaviour remain supported.
+
 ## v0.11
 
 - Renamed the user-facing application to **Simple Music Library Player**.
@@ -13,9 +28,8 @@
 
 - Startup update checks are fully passive: no popup and no visual/state change to the **Check for Updates** button.
 - A newer release is announced in the bottom-left; the user explicitly clicks **Check for Updates** before any update choice appears.
-- The main window now starts maximized by default so the complete interface is visible immediately.
+- The main window starts maximized by default.
 - Retains the compact **Now Playing** area introduced during v0.9 testing.
-- Updated the safe local `--simulate-update` workflow for post-release updater testing.
 
 ## v0.9
 
